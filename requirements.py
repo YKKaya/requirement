@@ -2,13 +2,13 @@ import streamlit as st
 import spacy
 
 # Load spaCy model
-nlp = spacy.load("en_core_web_sm")
 try:
     nlp = spacy.load("en_core_web_sm")
 except OSError:
-    print("Downloading spaCy English language model...")
+    st.warning("Downloading spaCy English language model...")
     spacy.cli.download("en_core_web_sm")
     nlp = spacy.load("en_core_web_sm")
+
 # Streamlit app
 st.title("Requirements Generator")
 
@@ -24,11 +24,28 @@ if st.button("Generate Requirements"):
         entities = {ent.text: ent.label_ for ent in doc.ents}
         dependencies = {token.text: token.dep_ for token in doc}
 
+        # Determine roles dynamically
+        roles = set(entities.values())
+        if "USER" in roles:
+            user_role = "User"
+        else:
+            user_role = ""
+
+        if "ACTION" in roles:
+            action_role = "I want"
+        else:
+            action_role = ""
+
+        if "GOAL" in roles:
+            goal_role = "So that"
+        else:
+            goal_role = ""
+
         # Display user story format
         st.subheader("User Story:")
-        st.write("As a:")
-        st.write("I want:")
-        st.write("So that:")
+        st.write(f"As a: {user_role}")
+        st.write(f"{action_role}:")
+        st.write(f"{goal_role}:")
 
         st.subheader("Given:")
         st.write("When:")
