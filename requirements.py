@@ -1,36 +1,28 @@
 import streamlit as st
-import spacy
+from transformers import T5ForConditionalGeneration, T5Tokenizer
 
-# Load spaCy model
-try:
-    nlp = spacy.load("en_core_web_sm")
-except OSError:
-    st.warning("Downloading spaCy English language model...")
-    spacy.cli.download("en_core_web_sm")
-    nlp = spacy.load("en_core_web_sm")
+# Load T5 model and tokenizer
+model = T5ForConditionalGeneration.from_pretrained("t5-small")
+tokenizer = T5Tokenizer.from_pretrained("t5-small")
 
 # Streamlit app
-st.title("Requirements Generator")
+st.title("Dynamic User Story Generator")
 
 # Input text area
 text_input = st.text_area("Enter your text here:")
 
-if st.button("Generate Requirements"):
+if st.button("Generate User Story"):
     if text_input:
-        # Process text with spaCy
-        doc = nlp(text_input)
+        # Preprocess text for summarization
+        input_ids = tokenizer.encode("summarize: " + text_input, return_tensors="pt", max_length=512)
 
-        # Extract sentences
-        sentences = [sent.text.strip() for sent in doc.sents]
+        # Generate summary
+        summary_ids = model.generate(input_ids, max_length=150, length_penalty=2.0, num_beams=4, early_stopping=True)
+        summary = tokenizer.decode(summary_ids[0], skip_special_tokens=True)
 
-        # Display user story format
-        st.subheader("User Story:")
-        for i, sentence in enumerate(sentences):
-            st.write(f"{sentence}:")
-
-        # Display additional information
-        st.subheader("Additional Information:")
-        st.write(f"Extracted Sentences: {sentences}")
+        # Display the generated user story
+        st.subheader("Generated User Story:")
+        st.write(summary)
 
     else:
         st.warning("Please enter some text.")
